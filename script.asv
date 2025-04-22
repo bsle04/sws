@@ -1,0 +1,62 @@
+% Load data and transpose
+V1 = data.grp.grpV1;
+chanlocs = data.chanlocs;
+
+carrierIdx = find(demographics.apoe4_carrier == 1);
+nonCarrierIdx = find(demographics.apoe4_carrier == 0);
+
+validChanIdx = find(arrayfun(@(c) isfield(c, 'labels') && ~isempty(c.labels), chanlocs));
+chanlocs_valid = chanlocs(validChanIdx);
+
+metricFields = {'sw_num', 'sw_dens', 'sw_freq', 'sw_trans_freq'};
+metricLabels = {'SW Count', 'SW Density', 'SW Frequency', 'SW Transition Frequency'};
+
+figure('Position', [100, 100, 1200, 800]);
+
+% Set expected value ranges for each metric
+metricRanges = {
+    [0 600],        % SW Count
+    [0 0.5],        % SW Density
+    [1.0 1.5],      % SW Frequency
+    [1.2 2.0]       % SW Transition Frequency
+};
+
+% inside your plotting loop
+topoplot(carrier_mean, chanlocs_valid);
+
+for m = 1:length(metricFields)
+    field = metricFields{m};
+    label = metricLabels{m};
+
+    % Transpose to channels × subjects
+    V1_data = V1.(field)';
+
+    % Compute means
+    carrier_mean = mean(V1_data(:, carrierIdx), 2);
+    noncarrier_mean = mean(V1_data(:, nonCarrierIdx), 2);
+    all_mean = mean(V1_data, 2);
+
+    % Reduce to valid channels
+    carrier_mean = carrier_mean(validChanIdx);
+    noncarrier_mean = noncarrier_mean(validChanIdx);
+    all_mean = all_mean(validChanIdx);
+
+    row = m - 1;
+
+    subplot(4, 3, row * 3 + 1);
+    topoplot(carrier_mean, chanlocs_valid);
+    title([label ' - Carrier']);
+    colorbar;
+
+    subplot(4, 3, row * 3 + 2);
+    topoplot(noncarrier_mean, chanlocs_valid);
+    title([label ' - Non-Carrier']);
+    colorbar;
+
+    subplot(4, 3, row * 3 + 3);
+    topoplot(all_mean, chanlocs_valid);
+    title([label ' - All Subjects']);
+    colorbar;
+end
+
+sgtitle('V1 Topoplots by APOE4 Carrier Status (No Differences)', 'FontSize', 16);
