@@ -22,6 +22,7 @@ metricLabels = {'SW Count', 'SW Density', 'SW Frequency', 'SW Transition Frequen
 V1 = data.grp.grpV1;
 V2 = data.grp.grpV2;
 
+% --- V1 & V2 Plots ---
 figure('Position', [100, 100, 1600, 1000]);
 
 for m = 1:length(metricFields)
@@ -86,3 +87,37 @@ for m = 1:length(metricFields)
 end
 
 sgtitle('Topoplots: APOE4 Carriers vs. Non-Carriers - V1 & V2 with Differences', 'FontSize', 16);
+
+% Save figure
+saveas(gcf, 'Topoplots_APOE4_V1V2_Differences.png');
+
+% --- Annualized Differences Plot ---
+annualDiffs = data.grp.annualDiffs;
+
+figure('Position', [100, 100, 1000, 800]);
+
+for m = 1:length(metricFields)
+    field = metricFields{m};
+    label = metricLabels{m};
+
+    ann_data = annualDiffs.(field);  % channels x subjects
+
+    % Check orientation
+    if size(ann_data, 2) == 206  % unlikely, just in case
+        ann_data = ann_data';
+    end
+
+    % Compute group difference
+    diffMap = mean(ann_data(:, carrierIdx), 2) - mean(ann_data(:, nonCarrierIdx), 2);
+    diffMap = diffMap(validChanIdx);
+
+    subplot(2, 2, m);
+    topoplot(diffMap, chanlocs_valid);
+    title([label ' - Annualized Diff (Carrier - Non-Carrier)']);
+    colorbar;
+end
+
+sgtitle('Annualized Differences in SW Metrics by APOE4 Status', 'FontSize', 16);
+
+% Save figure
+saveas(gcf, 'Annualized_Diff_Topoplots.png');
