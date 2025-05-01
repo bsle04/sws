@@ -1,127 +1,88 @@
-%%
-%v1 carriers vs noncarries
+% Load data and demographics
+path = 'C:\Users\Brandon\Repositories\sws\group\group\PAMMS_longitudinal_n29_SlowWavesSwitch_notLoggedTransformed.mat';
+data = load(path);
 
-V1 = data.grp.grpV1;
-chanlocs = data.chanlocs;
-
+demographicsPath = 'C:\Users\Brandon\Repositories\sws\masterDemographics_n29.xlsx';
+demographics = readtable(demographicsPath);
 carrierIdx = find(demographics.apoe4_carrier == 1);
 nonCarrierIdx = find(demographics.apoe4_carrier == 0);
 
+% Channel locations
+chanlocs = data.chanlocs;
+
+% Find valid EEG channels
 validChanIdx = find(arrayfun(@(c) isfield(c, 'labels') && ~isempty(c.labels), chanlocs));
 chanlocs_valid = chanlocs(validChanIdx);
 
+% Metric fields and labels
 metricFields = {'sw_num', 'sw_dens', 'sw_freq', 'sw_trans_freq'};
 metricLabels = {'SW Count', 'SW Density', 'SW Frequency', 'SW Transition Frequency'};
 
-figure('Position', [100, 100, 1200, 800]);
-
-for m = 1:length(metricFields)
-    field = metricFields{m};
-    label = metricLabels{m};
-
-    %transpose to channels × subjects
-    V1_data = V1.(field)';
-
-    %find means
-    carrier_mean = mean(V1_data(:, carrierIdx), 2);
-    noncarrier_mean = mean(V1_data(:, nonCarrierIdx), 2);
-    all_mean = mean(V1_data, 2);
-
-    %reduce to valid channels
-    carrier_mean = carrier_mean(validChanIdx);
-    noncarrier_mean = noncarrier_mean(validChanIdx);
-    all_mean = all_mean(validChanIdx);
-
-    row = m - 1;
-
-    subplot(4, 3, row * 3 + 1);
-    topoplot(carrier_mean, chanlocs_valid);
-    title([label ' - Carrier']);
-    colorbar;
-
-    subplot(4, 3, row * 3 + 2);
-    topoplot(noncarrier_mean, chanlocs_valid);
-    title([label ' - Non-Carrier']);
-    colorbar;
-
-    subplot(4, 3, row * 3 + 3);
-    topoplot(all_mean, chanlocs_valid);
-    title([label ' - All Subjects']);
-    colorbar;
-end
-
-sgtitle('V1 Topoplots by APOE4 Carrier Status', 'FontSize', 16);
-
-%%
-%v2 carriers vs non carriers
+% Extract group data
+V1 = data.grp.grpV1;
 V2 = data.grp.grpV2;
 
-figure('Position', [100, 100, 1200, 800]);
+figure('Position', [100, 100, 1600, 1000]);
 
 for m = 1:length(metricFields)
     field = metricFields{m};
     label = metricLabels{m};
 
-    %transpose to channels × subjects
+    % Data for current metric
+    V1_data = V1.(field)';  % channels x subjects
     V2_data = V2.(field)';
 
-    %find means
-    carrier_mean = mean(V2_data(:, carrierIdx), 2);
-    noncarrier_mean = mean(V2_data(:, nonCarrierIdx), 2);
-    all_mean = mean(V2_data, 2);
+    % Group means
+    V1_carrier = mean(V1_data(:, carrierIdx), 2);
+    V1_noncarrier = mean(V1_data(:, nonCarrierIdx), 2);
+    V2_carrier = mean(V2_data(:, carrierIdx), 2);
+    V2_noncarrier = mean(V2_data(:, nonCarrierIdx), 2);
 
-    %reduce to valid channels
-    carrier_mean = carrier_mean(validChanIdx);
-    noncarrier_mean = noncarrier_mean(validChanIdx);
-    all_mean = all_mean(validChanIdx);
+    % Differences
+    V1_diff = V1_carrier - V1_noncarrier;
+    V2_diff = V2_carrier - V2_noncarrier;
 
+    % Only keep valid channels
+    V1_carrier = V1_carrier(validChanIdx);
+    V1_noncarrier = V1_noncarrier(validChanIdx);
+    V1_diff = V1_diff(validChanIdx);
+    V2_carrier = V2_carrier(validChanIdx);
+    V2_noncarrier = V2_noncarrier(validChanIdx);
+    V2_diff = V2_diff(validChanIdx);
+
+    % Plotting (6 plots per row)
+    baseCol = 6;
     row = m - 1;
 
-    subplot(4, 3, row * 3 + 1);
-    topoplot(carrier_mean, chanlocs_valid);
-    title([label ' - Carrier']);
+    subplot(4, baseCol, row * baseCol + 1);
+    topoplot(V1_carrier, chanlocs_valid);
+    title([label ' - V1 Carrier']);
     colorbar;
 
-    subplot(4, 3, row * 3 + 2);
-    topoplot(noncarrier_mean, chanlocs_valid);
-    title([label ' - Non-Carrier']);
+    subplot(4, baseCol, row * baseCol + 2);
+    topoplot(V1_noncarrier, chanlocs_valid);
+    title([label ' - V1 Non-Carrier']);
     colorbar;
 
-    subplot(4, 3, row * 3 + 3);
-    topoplot(all_mean, chanlocs_valid);
-    title([label ' - All Subjects']);
+    subplot(4, baseCol, row * baseCol + 3);
+    topoplot(V1_diff, chanlocs_valid);
+    title([label ' - V1 Difference']);
     colorbar;
-end
 
-sgtitle('V2 Topoplots by APOE4 Carrier Status', 'FontSize', 16);
+    subplot(4, baseCol, row * baseCol + 4);
+    topoplot(V2_carrier, chanlocs_valid);
+    title([label ' - V2 Carrier']);
+    colorbar;
 
+    subplot(4, baseCol, row * baseCol + 5);
+    topoplot(V2_noncarrier, chanlocs_valid);
+    title([label ' - V2 Non-Carrier']);
+    colorbar;
 
-%%
-%annualDiffs
-
-annualDiffs = data.grp.annualDiffs;
-
-figure('Position', [100, 100, 900, 800]);
-
-for m = 1:length(metricFields)
-    field = metricFields{m};
-    label = metricLabels{m};
-
-    ann_data = annualDiffs.(field);  % already channels x subjects?
-
-    % If needed: transpose (double check shape)
-    if size(ann_data, 2) == 206
-        ann_data = ann_data';
-    end
-
-    %compute group mean difference
-    diffMap = mean(ann_data(:, carrierIdx), 2) - mean(ann_data(:, nonCarrierIdx), 2);
-    diffMap = diffMap(validChanIdx);
-
-    subplot(2, 2, m);
-    topoplot(diffMap, chanlocs_valid);
-    title([label ' - Annualized Difference (Carrier - Non-Carrier)']);
+    subplot(4, baseCol, row * baseCol + 6);
+    topoplot(V2_diff, chanlocs_valid);
+    title([label ' - V2 Difference']);
     colorbar;
 end
 
-sgtitle('Annualized Differences in SW Metrics by APOE4 Status', 'FontSize', 16);
+sgtitle('Topoplots: APOE4 Carriers vs. Non-Carriers - V1 & V2 with Differences', 'FontSize', 16);
