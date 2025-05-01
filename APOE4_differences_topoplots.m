@@ -10,10 +10,6 @@ nonCarrierIdx = find(demographics.apoe4_carrier == 0);
 % Channel locations
 chanlocs = data.chanlocs;
 
-% Find valid EEG channels
-validChanIdx = find(arrayfun(@(c) isfield(c, 'labels') && ~isempty(c.labels), chanlocs));
-chanlocs_valid = chanlocs(validChanIdx);
-
 % Metric fields and labels
 metricFields = {'sw_num', 'sw_dens', 'sw_freq', 'sw_trans_freq'};
 metricLabels = {'SW Count', 'SW Density', 'SW Frequency', 'SW Transition Frequency'};
@@ -34,22 +30,14 @@ for m = 1:length(metricFields)
     V2_data = V2.(field)';
 
     % Group means
-    V1_carrier = mean(V1_data(:, carrierIdx), 2);
-    V1_noncarrier = mean(V1_data(:, nonCarrierIdx), 2);
-    V2_carrier = mean(V2_data(:, carrierIdx), 2);
-    V2_noncarrier = mean(V2_data(:, nonCarrierIdx), 2);
+    V1_carrier = mean(V1_data(:, carrierIdx), 2, 'omitnan');
+    V1_noncarrier = mean(V1_data(:, nonCarrierIdx), 2, 'omitnan');
+    V2_carrier = mean(V2_data(:, carrierIdx), 2, 'omitnan');
+    V2_noncarrier = mean(V2_data(:, nonCarrierIdx), 2, 'omitnan');
 
     % Differences
-    V1_diff = V1_carrier - V1_noncarrier;
-    V2_diff = V2_carrier - V2_noncarrier;
-
-    % Only keep valid channels
-    V1_carrier = V1_carrier(validChanIdx);
-    V1_noncarrier = V1_noncarrier(validChanIdx);
-    V1_diff = V1_diff(validChanIdx);
-    V2_carrier = V2_carrier(validChanIdx);
-    V2_noncarrier = V2_noncarrier(validChanIdx);
-    V2_diff = V2_diff(validChanIdx);
+    carrier_diff = V2_carrier - V1_carrier;
+    noncarrier_diff = V2_noncarrier - V1_noncarrier;
 
     % Plotting (6 plots per row)
     baseCol = 6;
@@ -66,8 +54,8 @@ for m = 1:length(metricFields)
     colorbar;
 
     subplot(4, baseCol, row * baseCol + 3);
-    topoplot(V1_diff, chanlocs_valid);
-    title([label ' - V1 Difference']);
+    topoplot(carrier_diff, chanlocs_valid);
+    title([label ' - Carrier Difference']);
     colorbar;
 
     subplot(4, baseCol, row * baseCol + 4);
@@ -81,8 +69,8 @@ for m = 1:length(metricFields)
     colorbar;
 
     subplot(4, baseCol, row * baseCol + 6);
-    topoplot(V2_diff, chanlocs_valid);
-    title([label ' - V2 Difference']);
+    topoplot(noncarrier_diff, chanlocs_valid);
+    title([label ' - Noncarrier Difference']);
     colorbar;
 end
 
@@ -90,34 +78,3 @@ sgtitle('Topoplots: APOE4 Carriers vs. Non-Carriers - V1 & V2 with Differences',
 
 % Save figure
 saveas(gcf, 'Topoplots_APOE4_V1V2_Differences.png');
-
-% --- Annualized Differences Plot ---
-annualDiffs = data.grp.annualDiffs;
-
-figure('Position', [100, 100, 1000, 800]);
-
-for m = 1:length(metricFields)
-    field = metricFields{m};
-    label = metricLabels{m};
-
-    ann_data = annualDiffs.(field);  % channels x subjects
-
-    % Check orientation
-    if size(ann_data, 2) == 206  % unlikely, just in case
-        ann_data = ann_data';
-    end
-
-    % Compute group difference
-    diffMap = mean(ann_data(:, carrierIdx), 2) - mean(ann_data(:, nonCarrierIdx), 2);
-    diffMap = diffMap(validChanIdx);
-
-    subplot(2, 2, m);
-    topoplot(diffMap, chanlocs_valid);
-    title([label ' - Annualized Diff (Carrier - Non-Carrier)']);
-    colorbar;
-end
-
-sgtitle('Annualized Differences in SW Metrics by APOE4 Status', 'FontSize', 16);
-
-% Save figure
-saveas(gcf, 'Annualized_Diff_Topoplots.png');
