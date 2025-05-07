@@ -1,8 +1,8 @@
 % Load data and demographics
-path = 'C:\Users\Brandon\Repositories\sws\group\group\PAMMS_longitudinal_n29_SlowWavesSwitch_notLoggedTransformed.mat';
+path = 'C:\Users\Brandon\Repositories\sws\data\group\PAMMS_longitudinal_n29_SlowWavesSwitch_notLoggedTransformed.mat';
 data = load(path);
 
-demographicsPath = 'C:\Users\Brandon\Repositories\sws\masterDemographics_n29.xlsx';
+demographicsPath = 'C:\Users\Brandon\Repositories\sws\data\masterDemographics_n29.xlsx';
 demographics = readtable(demographicsPath);
 carrierIdx = find(demographics.apoe4_carrier == 1);
 nonCarrierIdx = find(demographics.apoe4_carrier == 0);
@@ -44,32 +44,32 @@ for m = 1:length(metricFields)
     row = m - 1;
 
     subplot(4, baseCol, row * baseCol + 1);
-    topoplot(V1_carrier, chanlocs_valid);
+    topoplot(V1_carrier, chanlocs);
     title([label ' - V1 Carrier']);
     colorbar;
 
     subplot(4, baseCol, row * baseCol + 2);
-    topoplot(V1_noncarrier, chanlocs_valid);
+    topoplot(V1_noncarrier, chanlocs);
     title([label ' - V1 Non-Carrier']);
     colorbar;
 
     subplot(4, baseCol, row * baseCol + 3);
-    topoplot(carrier_diff, chanlocs_valid);
+    topoplot(carrier_diff, chanlocs);
     title([label ' - Carrier Difference']);
     colorbar;
 
     subplot(4, baseCol, row * baseCol + 4);
-    topoplot(V2_carrier, chanlocs_valid);
+    topoplot(V2_carrier, chanlocs);
     title([label ' - V2 Carrier']);
     colorbar;
 
     subplot(4, baseCol, row * baseCol + 5);
-    topoplot(V2_noncarrier, chanlocs_valid);
+    topoplot(V2_noncarrier, chanlocs);
     title([label ' - V2 Non-Carrier']);
     colorbar;
 
     subplot(4, baseCol, row * baseCol + 6);
-    topoplot(noncarrier_diff, chanlocs_valid);
+    topoplot(noncarrier_diff, chanlocs);
     title([label ' - Noncarrier Difference']);
     colorbar;
 end
@@ -77,4 +77,4 @@ end
 sgtitle('Topoplots: APOE4 Carriers vs. Non-Carriers - V1 & V2 with Differences', 'FontSize', 16);
 
 % Save figure
-saveas(gcf, 'Topoplots_APOE4_V1V2_Differences.png');
+saveas(gcf, 'C:\Users\Brandon\Repositories\sws\figures\Topoplots_APOE4_V1V2_Differences.png');
